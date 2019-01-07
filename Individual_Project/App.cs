@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Data;
 using System.Data.SqlClient;
-using System.Security.Cryptography;
+
 
 
 namespace Individual_Project
@@ -15,9 +15,11 @@ namespace Individual_Project
     {
         private string connectionstring = "Server=localhost; Database=IndividualProject; Trusted_Connection=True;";
         private string initialconnectionstring = "Server=localhost; Database=master; Trusted_Connection=True;";
-        private List<string> Usernames_Passwords = new List<string>();
-        private List<string[]> User_Data = new List<string[]>();
 
+        /// <summary>
+        /// This function checks if the database exists and creates then database if it does not.
+        /// The function adds admin super user
+        /// </summary>
         public void CreateDatabase()
         {
             SqlConnection dbcon = new SqlConnection(initialconnectionstring);
@@ -35,13 +37,14 @@ namespace Individual_Project
                         var affectedRows = cmd.ExecuteNonQuery();
                         cmd = new SqlCommand("use IndividualProject", dbcon);
                         affectedRows = cmd.ExecuteNonQuery();
-                        cmd = new SqlCommand("create table Users(Login nvarchar(50) NOT NULL," +
-                            "Password nvarchar(64) NOT NULL, Role nvarchar(50) NOT NULL)", dbcon);
+                        cmd = new SqlCommand("create table Users(UserID int PRIMARY KEY IDENTITY(1,1),Login nvarchar(50)," +
+                            "Password varbinary(512), Role nvarchar(50), Active bit)", dbcon);
                         affectedRows = cmd.ExecuteNonQuery();
-                        cmd = new SqlCommand("create table Messages(MessageId int NOT NULL PRIMARY KEY IDENTITY(1,1),Message nvarchar(MAX) NOT NULL,Date datetime NOT NULL," +
-                            " SenderID nvarchar(50) NOT NULL,ReceiverID nvarchar(50) NOT NULL)", dbcon);
+                        cmd = new SqlCommand("create table Messages(MessageId int PRIMARY KEY IDENTITY(1,1),Message nvarchar(MAX) ,Date datetime ," +
+                            "SenderID int REFERENCES Users(UserID)," +
+                            "ReceiverID int REFERENCES Users(UserID))", dbcon);
                         affectedRows = cmd.ExecuteNonQuery();
-                        cmd = new SqlCommand("insert into Users values ('admin','admin','SuperAdmin')", dbcon);
+                        cmd = new SqlCommand("insert into Users values ('admin',HASHBYTES('SHA2_256',HASHBYTES('SHA2_256','admin')),'SuperAdmin','1')", dbcon);
                         affectedRows = cmd.ExecuteNonQuery();
                     }
                     catch (Exception e)
@@ -49,98 +52,79 @@ namespace Individual_Project
                         Console.WriteLine(e);
                     }
                 }
-                else
-                {
-                    Console.WriteLine("Database exists");
-                }
             }
         }
 
-
-        public void LoadUserPass()
-        {
-            SqlConnection dbcon = new SqlConnection(connectionstring);
-            Usernames_Passwords.Clear();
-            User_Data.Clear();
-            CreateDatabase();
-
-            using (dbcon)
-            {
-                dbcon.Open();
-                var cmd = new SqlCommand("select * from Users", dbcon);
-                using (var reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        string[] data = new string[3];
-                        data[0] = reader[0].ToString();
-                        data[1] = reader[1].ToString();
-                        data[2] = reader[2].ToString();
-                        Usernames_Passwords.Add(data[0] + " " + data[1]);
-                        User_Data.Add(data);
-                    }
-                }
-            }
-        }
-
+        /// <summary>
+        /// This function checks the username and password of the users and if succeful creates an instance of the user
+        /// </summary>
         public void CheckUserPass()
         {
-            LoadUserPass();
-            bool login = false;
+            CreateDatabase();
             Console.WriteLine("Dwse username: ");
             string username = Console.ReadLine();
             Console.WriteLine("Dwse password: ");
             string password = Console.ReadLine();
-            string userpass = username + " " + password;
 
-
-            foreach (var user in Usernames_Passwords)
+            SqlConnection dbcon = new SqlConnection(connectionstring);
+            using (dbcon)
             {
-                if (user == userpass)
+                dbcon.Open();
+                var cmd = new SqlCommand($"select * from Users where Login = '{username}' and HASHBYTES('SHA2_256',HASHBYTES('SHA2_256','{password}')) = Password and Active='1'", dbcon);
+                using (var reader = cmd.ExecuteReader())
                 {
-                    Console.WriteLine("Login Successful");
-                    login = true;
-                    foreach (string[] data in User_Data)
+                    if (reader.Read())
                     {
-                        if (username == data[0])
-                        {
-                            if (data[2] == "SuperAdmin")
-                            {
-                                SuperAdmin temp = new SuperAdmin(data[0], data[1], data[2]);
-                                temp.Menu();
-                            }
-                            else if(data[2]== "User" || data[2]=="user")
-                            {
-                                User temp = new User(data[0], data[1], data[2]);
-                                temp.Menu();
-                            }
-                            else if (data[2] == "Viewer" || data[2] == "viewer")
-                            {
-                                Viewer temp = new Viewer(data[0], data[1], data[2]);
-                                temp.Menu();
-                            }
-                            else if (data[2] == "MessageEditor")
-                            {
-                                MessageEditor temp = new MessageEditor(data[0], data[1], data[2]);
-                                temp.Menu();
-                            }
-                            else if(data[2]=="MessageHandler")
-                            {
-                                MessageHandler temp = new MessageHandler(data[0], data[1], data[2]);
-                                temp.Menu();
-                            }
+                        Console.WriteLine();
+                        Console.WriteLine("===Login Successful===");
+                        Console.WriteLine();
+                        string[] data = new string[5];
+                        data[0] = reader[0].ToString();
+                        data[1] = reader[1].ToString();
+                        data[2] = reader[2].ToString();
+                        data[3] = reader[3].ToString();
+                        data[4] = reader[4].ToString();
 
+                        if (data[3] == "SuperAdmin")
+                        {
+                            SuperAdmin temp = new SuperAdmin(int.Parse(data[0]), data[1], data[2], data[3]);
+                            temp.Menu();
                         }
+                        else if (data[3] == "User" || data[3] == "user")
+                        {
+                            User temp = new User(int.Parse(data[0]), data[1], data[2], data[3]);
+                            temp.Menu();
+                        }
+                        else if (data[3] == "MessageViewer" || data[3] == "Messageviewer")
+                        {
+                            Viewer temp = new Viewer(int.Parse(data[0]), data[1], data[2], data[3]);
+                            temp.Menu();
+                        }
+                        else if (data[3] == "MessageEditor")
+                        {
+                            MessageEditor temp = new MessageEditor(int.Parse(data[0]), data[1], data[2], data[3]);
+                            temp.Menu();
+                        }
+                        else if (data[3] == "MessageHandler")
+                        {
+                            MessageHandler temp = new MessageHandler(int.Parse(data[0]), data[1], data[2], data[3]);
+                            temp.Menu();
+                        }
+
+                    }
+                    else
+                    {
+                        Console.WriteLine();
+                        Console.WriteLine("===Login Failed===");
+                        Console.WriteLine();
                     }
                 }
             }
-            if (login == false)
-            {
-                Console.WriteLine("Login Failed");
-            }
         }
 
-
+        /// <summary>
+        /// This function presents the main menu of the application
+        /// </summary>
         public void Menu()
         {
             bool exit = true;
@@ -160,7 +144,9 @@ namespace Individual_Project
                 }
                 else
                 {
-                    Console.WriteLine("Wrong Choice!Please try again using number 1 or 2");
+                    Console.WriteLine();
+                    Console.WriteLine("===Wrong Choice!Please try again using number 1 or 2===");
+                    Console.WriteLine();
                 }
             }
         }

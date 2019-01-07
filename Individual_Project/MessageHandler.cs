@@ -11,7 +11,7 @@ namespace Individual_Project
 {
     public class MessageHandler : MessageEditor
     {
-        public MessageHandler(string ULogin, string UPassword, string URole) : base(ULogin, UPassword, URole)
+        public MessageHandler(int UUserID,string ULogin, string UPassword, string URole) : base(UUserID,ULogin, UPassword, URole)
         {
 
         }
@@ -26,13 +26,15 @@ namespace Individual_Project
             using (dbcon)
             {
                 dbcon.Open();
-                var cmd = new SqlCommand($"select login from Users where login='{login}'", dbcon);
+                var cmd = new SqlCommand($"select login from Users where login='{login}' and Active='1'", dbcon);
 
                 using (var reader = cmd.ExecuteReader())
                 {
                     if (!reader.Read())
                     {
-                        Console.WriteLine("User does not exist");
+                        Console.WriteLine();
+                        Console.WriteLine("===User does not exist===");
+                        Console.WriteLine();
                         return;
                     }
                 }
@@ -45,31 +47,48 @@ namespace Individual_Project
                     int.TryParse(Console.ReadLine(), out choice);
                     if(choice<1||choice>4)
                     {
-                        Console.WriteLine("Wrong choice.Try again");
+                        Console.WriteLine();
+                        Console.WriteLine("===Wrong choice.Try again===");
+                        Console.WriteLine();
                     }
                 }
                 while (choice < 1 || choice >4);
 
                 if (choice == 1)
                 {
-                    var cmd2 = new SqlCommand($"delete from Messages where SenderID='{login}'", dbcon);
+                    var cmd2 = new SqlCommand($"delete from Messages where SenderID='{GetUserID(login)}'", dbcon);
                     cmd2.Parameters.AddWithValue("@login", login);
                     var affectedRows = cmd2.ExecuteNonQuery();
-                    Console.WriteLine($"{affectedRows} Affected Rows");
+                    if (affectedRows > 0)
+                    {
+                        Console.WriteLine();
+                        Console.WriteLine("===Messages Deleted===");
+                        Console.WriteLine();
+                    }
                 }
                 else if(choice ==2)
                 {
-                    var cmd2 = new SqlCommand($"delete from Messages where ReceiverID='{login}'", dbcon);
+                    var cmd2 = new SqlCommand($"delete from Messages where ReceiverID='{GetUserID(login)}'", dbcon);
                     cmd2.Parameters.AddWithValue("@login", login);
                     var affectedRows = cmd2.ExecuteNonQuery();
-                    Console.WriteLine($"{affectedRows} Affected Rows");
+                    if (affectedRows > 0)
+                    {
+                        Console.WriteLine();
+                        Console.WriteLine("===Messages Deleted===");
+                        Console.WriteLine();
+                    }
                 }
                 else if (choice == 3)
                 {
-                    var cmd2 = new SqlCommand($"delete from Messages where ReceiverID='{login}' or SenderID='{login}'", dbcon);
+                    var cmd2 = new SqlCommand($"delete from Messages where ReceiverID='{GetUserID(login)}' or SenderID='{GetUserID(login)}'", dbcon);
                     cmd2.Parameters.AddWithValue("@login", login);
                     var affectedRows = cmd2.ExecuteNonQuery();
-                    Console.WriteLine($"{affectedRows} Affected Rows");
+                    if (affectedRows > 0)
+                    {
+                        Console.WriteLine();
+                        Console.WriteLine("===Messages Deleted===");
+                        Console.WriteLine();
+                    }
                 }
                 else
                 {
@@ -80,13 +99,19 @@ namespace Individual_Project
                     bool x = int.TryParse(Console.ReadLine(), out Choice);
                     while (x == false || !CheckValidChoice(login, Choice))
                     {
-                        Console.WriteLine("Wrong Choice");
-                        Console.WriteLine("Choose a valid number");
+                        Console.WriteLine();
+                        Console.WriteLine("===Wrong Choice!!Choose a valid number===");
+                        Console.WriteLine();
                         x = int.TryParse(Console.ReadLine(), out Choice);
                     }
                      var cmd2 = new SqlCommand($"delete from Messages where MessageID='{Choice}'", dbcon);
                      var affectedRows = cmd2.ExecuteNonQuery();
-                     Console.WriteLine($"{affectedRows} Affected Rows");
+                    if (affectedRows > 0)
+                    {
+                        Console.WriteLine();
+                        Console.WriteLine("===Message Deleted===");
+                        Console.WriteLine();
+                    }
                 }
             }
         }
@@ -123,6 +148,7 @@ namespace Individual_Project
                             DeleteMessages();
                             break;
                         case 6:
+                            Console.WriteLine();
                             Logout = true;
                             break;
                         default:

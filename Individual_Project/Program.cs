@@ -11,6 +11,10 @@ namespace Individual_Project
 {
     class Program
     {
+        /// <summary>
+        /// The main function of the application
+        /// </summary>
+        /// <param name="args"></param>
         static void Main(string[] args)
         {
             App messenger = new App();

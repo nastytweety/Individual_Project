@@ -6,14 +6,13 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Data;
 using System.Data.SqlClient;
-using System.Security.Cryptography;
 
 namespace Individual_Project
 {
 
     public class SuperAdmin : User
     {
-        public SuperAdmin(string ULogin, string UPassword, string URole) : base(ULogin, UPassword, URole)
+        public SuperAdmin(int UUserID,string ULogin, string UPassword, string URole) : base(UUserID,ULogin, UPassword, URole)
         {
 
         }
@@ -28,13 +27,15 @@ namespace Individual_Project
             using (dbcon)
             {
                 dbcon.Open();
-                var cmd = new SqlCommand($"select login from Users where login='{login}'", dbcon);
+                var cmd = new SqlCommand($"select login from Users where login='{login}' and Active = '1'", dbcon);
 
                 using (var reader = cmd.ExecuteReader())
                 {
                     if (!reader.Read())
                     {
-                        Console.WriteLine("Username does not exist");
+                        Console.WriteLine();
+                        Console.WriteLine("===Username does not exist===");
+                        Console.WriteLine();
                         return;
                     }
                 }
@@ -50,13 +51,14 @@ namespace Individual_Project
                 } while (RoleCheck(role) == false);
 
 
-                var cmd2 = new SqlCommand("update Users set Login = @newlogin,Password = @password, Role = @role where login = @login", dbcon);
-                cmd2.Parameters.AddWithValue("@login", login);
-                cmd2.Parameters.AddWithValue("@newlogin", newlogin);
-                cmd2.Parameters.AddWithValue("@password", password);
-                cmd2.Parameters.AddWithValue("@role", role);
+                var cmd2 = new SqlCommand($"update Users set Login = '{newlogin}',Password = HASHBYTES('SHA2_256',HASHBYTES('SHA2_256','{password}')), Role = '{role}' where UserID = '{GetUserID(login)}'", dbcon);
                 var affectedRows = cmd2.ExecuteNonQuery();
-                Console.WriteLine($"{affectedRows} Affected Rows");
+                if (affectedRows > 0)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("===User updated===");
+                    Console.WriteLine();
+                }
             }
         }
 
@@ -70,7 +72,7 @@ namespace Individual_Project
             Console.WriteLine("The roles are <<1.User>> <<2.MessageViewer>> <<3.MesageEditor>> <<4.MessageHandler>>");
             do
             {
-                Console.WriteLine("Insert new role");
+                Console.WriteLine("Insert role");
                 role = Console.ReadLine();
             } while (RoleCheck(role) == false);
 
@@ -78,22 +80,26 @@ namespace Individual_Project
             using (dbcon)
             {
                 dbcon.Open();
-                var cmd = new SqlCommand($"select login from Users where login='{login}'", dbcon);
+                var cmd = new SqlCommand($"select login from Users where login='{login}' and Active ='1'", dbcon);
                 using (var reader = cmd.ExecuteReader())
                 {
                     if (reader.Read())
                     {
-                        Console.WriteLine("Username exists");
+                        Console.WriteLine();
+                        Console.WriteLine("===Username exists===");
+                        Console.WriteLine();
                         return;
                     }
                 }
-                var cmd2 = new SqlCommand("insert into Users values(@login,@password,@role)", dbcon);
-                cmd2.Parameters.AddWithValue("@login", login);
-                cmd2.Parameters.AddWithValue("@password", password);
-                cmd2.Parameters.AddWithValue("@role", role);
+                var cmd2 = new SqlCommand($"insert into Users values('{login}',HASHBYTES('SHA2_256',HASHBYTES('SHA2_256','{password}')),'{role}','1')", dbcon);
                 var affectedRows = cmd2.ExecuteNonQuery();
-
-                Console.WriteLine($"{affectedRows} Affected Rows");
+                if(affectedRows>0)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("===User created===");
+                    Console.WriteLine();
+                }
+                
             }
         }
 
@@ -112,10 +118,15 @@ namespace Individual_Project
                 if (reader.Read())
                 {
                     reader.Close();
-                    var cmd2 = new SqlCommand($"delete from Users where login='{login}'", dbcon);
+                    var cmd2 = new SqlCommand($"update Users set Active = '0' where login='{login}'", dbcon);
                     cmd2.Parameters.AddWithValue("@login", login);
                     var affectedRows = cmd2.ExecuteNonQuery();
-                    //Console.WriteLine($"{affectedRows} Affected Rows");
+                    if (affectedRows > 0)
+                    {
+                        Console.WriteLine();
+                        Console.WriteLine("===User deleted===");
+                        Console.WriteLine();
+                    }
                 }
                 else
                 {
@@ -132,16 +143,18 @@ namespace Individual_Project
             using (dbcon)
             {
                 dbcon.Open();
-                var cmd = new SqlCommand("select * from Users", dbcon);
+                var cmd = new SqlCommand("select * from Users where Active = '1'", dbcon);
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
                     {
-                        string[] data = new string[3];
+                        string[] data = new string[5];
                         data[0] = reader[0].ToString();
                         data[1] = reader[1].ToString();
                         data[2] = reader[2].ToString();
-                        Console.WriteLine($"Login: {data[0]}, Pass: {data[1]}, Role: {data[2]}");
+                        data[3] = reader[3].ToString();
+                        data[4] = reader[4].ToString();
+                        Console.WriteLine($"UserID: {data[0]}, Login: {data[1]}, Role: {data[3]}");
                     }
                 }
             }

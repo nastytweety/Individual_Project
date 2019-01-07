@@ -13,12 +13,15 @@ namespace Individual_Project
     {
         protected string connectionstring = "Server=localhost;Database=IndividualProject;Trusted_Connection=True;";
         protected List<string[]> Loaded_Messages = new List<string[]>();
+
+        protected int UserID;
         protected string Login;
         protected string Password;
         protected string Role;
 
-        public User(String ULogin, String UPassword, String URole)
+        public User(int UUserID, String ULogin, String UPassword, String URole)
         {
+            UserID = UUserID;
             Login = ULogin;
             Password = UPassword;
             Role = URole;
@@ -37,11 +40,48 @@ namespace Individual_Project
             }
             else
             {
-                Console.WriteLine("No such role");
+                Console.WriteLine();
+                Console.WriteLine("===No such role===");
+                Console.WriteLine();
                 return false;
             }
         }
 
+        protected int GetUserID(string Login)
+        {
+            SqlConnection dbcon = new SqlConnection(connectionstring);
+            using (dbcon)
+            {
+                dbcon.Open();
+                var cmd = new SqlCommand($"select UserID from Users where Login='{Login}' and Active = '1'", dbcon);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        return (int)reader[0];
+                    }
+                }
+            }
+            return 0;
+        }
+
+        protected string GetLogin(int UserID)
+        {
+            SqlConnection dbcon = new SqlConnection(connectionstring);
+            using (dbcon)
+            {
+                dbcon.Open();
+                var cmd = new SqlCommand($"select Login from Users where UserID='{UserID}' and Active='1'", dbcon);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        return reader[0].ToString();
+                    }
+                }
+            }
+            return null;
+        }
 
         public void Menu()
         {
@@ -63,10 +103,13 @@ namespace Individual_Project
                             ShowMessage();
                             break;
                         case 3:
+                            Console.WriteLine();
                             Logout = true;
                             break;
                         default:
-                            Console.WriteLine("Wrong Choice");
+                            Console.WriteLine();
+                            Console.WriteLine("===Wrong Choice!Try again using 1,2,3,===");
+                            Console.WriteLine();
                             break;
                     }
                 }
@@ -88,13 +131,31 @@ namespace Individual_Project
             using (dbcon)
             {
                 dbcon.Open();
-                var cmd = new SqlCommand("insert into Messages values(@Message,@Date,@SenderID,@ReceiverID)", dbcon);
+
+                var cmd = new SqlCommand($"select login from Users where login='{receiver}' and Active ='1'", dbcon);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (!reader.Read())
+                    {
+                        Console.WriteLine();
+                        Console.WriteLine("===Username does not exist===");
+                        Console.WriteLine();
+                        return;
+                    }
+                }
+
+                cmd = new SqlCommand("insert into Messages values(@Message,@Date,@Sender,@Receiver)", dbcon);
                 cmd.Parameters.AddWithValue("@Message", message);
                 cmd.Parameters.AddWithValue("@Date", System.DateTime.Now);
-                cmd.Parameters.AddWithValue("@SenderID", sender);
-                cmd.Parameters.AddWithValue("@ReceiverID", receiver);
+                cmd.Parameters.AddWithValue("@Sender", GetUserID(sender));
+                cmd.Parameters.AddWithValue("@Receiver", GetUserID(receiver));
                 var affectedRows = cmd.ExecuteNonQuery();
-                //Console.WriteLine($"{affectedRows} Affected Rows");
+                if(affectedRows>0)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("===Message Sent!!!===");
+                    Console.WriteLine();
+                }
             }
 
 
@@ -132,9 +193,10 @@ namespace Individual_Project
             using (dbcon)
             {
                 dbcon.Open();
-                var cmd = new SqlCommand($"select * from Messages where ReceiverID = '{this.Login}'", dbcon);
+                var cmd = new SqlCommand($"select * from Messages where ReceiverID = '{GetUserID(this.Login).ToString()}'", dbcon);
                 using (var reader = cmd.ExecuteReader())
                 {
+                    Console.WriteLine();
                     while (reader.Read())
                     {
                         string[] data = new string[5];
@@ -144,8 +206,9 @@ namespace Individual_Project
                         data[3] = reader[3].ToString();
                         data[4] = reader[4].ToString();
 
-                        Console.WriteLine($"ID: {data[0]} Message: {data[1]}, Date: {data[2]}, SenderID: {data[3]},ReceiverID: {data[4]}");
+                        Console.WriteLine($"ID: {data[0]} Message: {data[1]}, Date: {data[2]}, Sender: {GetLogin(int.Parse(data[3]))},SenderID: {data[3]},Receiver: {GetLogin(int.Parse(data[4]))}");
                     }
+                    Console.WriteLine();
                 }
             }
         }

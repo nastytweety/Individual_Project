@@ -11,7 +11,7 @@ namespace Individual_Project
 {
     public class MessageEditor : Viewer
     {
-        public MessageEditor(string ULogin, string UPassword, string URole) : base(ULogin, UPassword, URole)
+        public MessageEditor(int UUserID,string ULogin, string UPassword, string URole) : base(UUserID,ULogin, UPassword, URole)
         {
 
         }
@@ -36,7 +36,7 @@ namespace Individual_Project
             return " ";
         }
 
-        public string GetSenderByNumber(int number)
+        public int GetSenderByNumber(int number)
         {
             SqlConnection dbcon = new SqlConnection(connectionstring);
 
@@ -49,15 +49,15 @@ namespace Individual_Project
                 {
                     while (reader.Read())
                     {
-                        return reader[0].ToString();
+                        return int.Parse(reader[0].ToString());
                     }
                 } 
             }
-            return " ";
+            return 0;
         }
 
 
-        public string GetReceiverByNumber(int number)
+        public int GetReceiverByNumber(int number)
         {
             SqlConnection dbcon = new SqlConnection(connectionstring);
 
@@ -70,16 +70,16 @@ namespace Individual_Project
                 {
                     while (reader.Read())
                     {
-                        return reader[0].ToString();
+                        return int.Parse(reader[0].ToString());
                     }
                 }
             }
-            return " ";
+            return 0;
         }
 
         public bool CheckValidChoice(string login,int number)
         {
-            if(GetReceiverByNumber(number)==login || GetSenderByNumber(number)==login)
+            if(GetLogin(GetReceiverByNumber(number))==login || GetLogin(GetSenderByNumber(number))==login)
             {
                 return true;
             }
@@ -105,7 +105,12 @@ namespace Individual_Project
                 cmd.Parameters.AddWithValue("@receiverid", GetReceiverByNumber(messageid));
                 cmd.Parameters.AddWithValue("@messageid", messageid);
                 var affectedRows = cmd.ExecuteNonQuery();
-                Console.WriteLine($"{affectedRows} Affected Rows");
+                if(affectedRows>0)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("===Message Updated===");
+                    Console.WriteLine();
+                }
             }   
         }
 
@@ -129,9 +134,10 @@ namespace Individual_Project
             bool x = int.TryParse(Console.ReadLine(), out choice);
             while (x == false  || !CheckValidChoice(login, choice))
             {
-                    Console.WriteLine("Wrong Choice");
-                    Console.WriteLine("Choose a valid number");
-                    x = int.TryParse(Console.ReadLine(), out choice);
+                Console.WriteLine();
+                Console.WriteLine("===Wrong Choice!Choose a valid number===");
+                Console.WriteLine();
+                x = int.TryParse(Console.ReadLine(), out choice);
             }
 
             Console.WriteLine(GetMessageByNumber(choice));
@@ -168,10 +174,13 @@ namespace Individual_Project
                             EditMessage();
                             break;
                         case 5:
+                            Console.WriteLine();
                             Logout = true;
                             break;
                         default:
-                            Console.WriteLine("Wrong Choice");
+                            Console.WriteLine();
+                            Console.WriteLine("===Wrong Choice===");
+                            Console.WriteLine();
                             break;
                     }
                 }

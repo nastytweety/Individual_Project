@@ -11,7 +11,7 @@ namespace Individual_Project
 {
     public class Viewer : User
     {
-        public Viewer(string ULogin,string UPassword,string URole) : base(ULogin,UPassword,URole)
+        public Viewer(int UUserID,string ULogin,string UPassword,string URole) : base(UUserID, ULogin,UPassword,URole)
         {
 
         }
@@ -40,10 +40,13 @@ namespace Individual_Project
                             ShowUsersMessages();
                             break;
                         case 4:
+                            Console.WriteLine();
                             Logout = true;
                             break;
                         default:
-                            Console.WriteLine("Wrong Choice");
+                            Console.WriteLine();
+                            Console.WriteLine("===Wrong Choice===");
+                            Console.WriteLine();
                             break;
                     }
                 }
@@ -66,14 +69,17 @@ namespace Individual_Project
                 {
                     if (!reader.Read())
                     {
-                        Console.WriteLine("User does not exist");
+                        Console.WriteLine();
+                        Console.WriteLine("===User does not exist===");
+                        Console.WriteLine();
                         return;
                     }
                 }
 
-                cmd = new SqlCommand($"select * from Messages where ReceiverID = '{login}' or SenderID = '{login}'", dbcon);
+                cmd = new SqlCommand($"select * from Messages where ReceiverID = '{GetUserID(login)}' or SenderID = '{GetUserID(login)}'", dbcon);
                 using (var reader = cmd.ExecuteReader())
                 {
+                    Console.WriteLine();
                     while (reader.Read())
                     {
                         counter++;
@@ -84,8 +90,9 @@ namespace Individual_Project
                         data[3] = reader[3].ToString();
                         data[4] = reader[4].ToString();
 
-                        Console.WriteLine($"ID: {data[0]} Message: {data[1]}, Date: {data[2]}, SenderID: {data[3]},ReceiverID: {data[4]}");
+                        Console.WriteLine($"ID: {data[0]} Message: {data[1]}, Date: {data[2]}, Sender: {GetLogin(int.Parse(data[3]))},SenderID: {data[3]},Receiver: {GetLogin(int.Parse(data[4]))}");
                     }
+                    Console.WriteLine();
                 }
             }
         }
@@ -104,14 +111,17 @@ namespace Individual_Project
                 {
                     if (!reader.Read())
                     {
-                        Console.WriteLine("User does not exist");
+                        Console.WriteLine();
+                        Console.WriteLine("===User does not exist===");
+                        Console.WriteLine();
                         return false;
                     }
                 }
 
-                cmd = new SqlCommand($"select * from Messages where ReceiverID = '{login}' or SenderID = '{login}'", dbcon);
+                cmd = new SqlCommand($"select * from Messages where ReceiverID = '{GetUserID(login)}' or SenderID = '{GetUserID(login)}'", dbcon);
                 using (var reader = cmd.ExecuteReader())
                 {
+                    Console.WriteLine();
                     while (reader.Read())
                     {
                         counter++;
@@ -124,6 +134,7 @@ namespace Individual_Project
 
                         Console.WriteLine($"ID: {data[0]} Message: {data[1]}, Date: {data[2]}, SenderID: {data[3]},ReceiverID: {data[4]}");
                     }
+                    Console.WriteLine();
                 }
                 return true;
             }
