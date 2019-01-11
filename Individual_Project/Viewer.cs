@@ -15,7 +15,9 @@ namespace Individual_Project
         {
 
         }
-
+        /// <summary>
+        /// The Menu
+        /// </summary>
         public new void Menu()
         {
             int Choice;
@@ -23,9 +25,11 @@ namespace Individual_Project
             while (!Logout)
             {
                 Console.WriteLine("1. Write new message");
-                Console.WriteLine("2. Read messages");
-                Console.WriteLine("3. View messages");
-                Console.WriteLine("4. Logout");
+                Console.WriteLine("2. Open inbox");
+                Console.WriteLine("3. Open sent messages");
+                Console.WriteLine("4. Enter Chat");
+                Console.WriteLine("5. View Messages");
+                Console.WriteLine("6. Logout");
                 if (int.TryParse(Console.ReadLine(), out Choice))
                 {
                     switch (Choice)
@@ -34,12 +38,18 @@ namespace Individual_Project
                             WriteMessage();
                             break;
                         case 2:
-                            ShowMessage();
+                            ShowMessage(1);
                             break;
                         case 3:
-                            ShowUsersMessages();
+                            ShowMessage(0);
                             break;
                         case 4:
+                            EnterChat();
+                            break;
+                        case 5:
+                            ShowUsersMessages(null);
+                            break;
+                        case 6:
                             Console.WriteLine();
                             Logout = true;
                             break;
@@ -53,36 +63,38 @@ namespace Individual_Project
             }
         }
 
-        protected void ShowUsersMessages()
+        /// <summary>
+        /// Shows the incoming and outgoing messages of a user
+        /// </summary>
+        /// <param name="ulogin">If param=null then function asks for username</param>
+        protected void ShowUsersMessages(string ulogin)
         {
-            int counter = 0;
-            SqlConnection dbcon = new SqlConnection(connectionstring);
-            Console.WriteLine("Insert Username");
-            string login = Console.ReadLine();
-
-            using (dbcon)
+            string login;
+            if (ulogin==null)
             {
-                dbcon.Open();
-                var cmd = new SqlCommand($"select login from Users where login='{login}'", dbcon);
-
-                using (var reader = cmd.ExecuteReader())
+                Console.WriteLine("Insert Username");
+                login = Console.ReadLine();
+                if (!CheckIfExists(login))
                 {
-                    if (!reader.Read())
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine("===User does not exist===");
-                        Console.WriteLine();
-                        return;
-                    }
+                    return;
                 }
-
-                cmd = new SqlCommand($"select * from Messages where ReceiverID = '{GetUserID(login)}' or SenderID = '{GetUserID(login)}'", dbcon);
+            }
+            else
+            {
+                login = ulogin;
+            }
+            
+           
+            SqlConnection dbcon = new SqlConnection(connectionstring);
+            using (dbcon)
+            { 
+                dbcon.Open();
+                var cmd = new SqlCommand($"select * from Messages where ReceiverID = '{GetUserID(login)}' or SenderID = '{GetUserID(login)}'", dbcon);
                 using (var reader = cmd.ExecuteReader())
                 {
                     Console.WriteLine();
                     while (reader.Read())
                     {
-                        counter++;
                         string[] data = new string[5];
                         data[0] = reader[0].ToString();
                         data[1] = reader[1].ToString();
@@ -94,49 +106,6 @@ namespace Individual_Project
                     }
                     Console.WriteLine();
                 }
-            }
-        }
-
-        protected bool ShowUsersMessages(string login)
-        {
-            int counter = 0;
-            SqlConnection dbcon = new SqlConnection(connectionstring);
-
-            using (dbcon)
-            {
-                dbcon.Open();
-                var cmd = new SqlCommand($"select login from Users where login='{login}'", dbcon);
-
-                using (var reader = cmd.ExecuteReader())
-                {
-                    if (!reader.Read())
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine("===User does not exist===");
-                        Console.WriteLine();
-                        return false;
-                    }
-                }
-
-                cmd = new SqlCommand($"select * from Messages where ReceiverID = '{GetUserID(login)}' or SenderID = '{GetUserID(login)}'", dbcon);
-                using (var reader = cmd.ExecuteReader())
-                {
-                    Console.WriteLine();
-                    while (reader.Read())
-                    {
-                        counter++;
-                        string[] data = new string[5];
-                        data[0] = reader[0].ToString();
-                        data[1] = reader[1].ToString();
-                        data[2] = reader[2].ToString();
-                        data[3] = reader[3].ToString();
-                        data[4] = reader[4].ToString();
-
-                        Console.WriteLine($"ID: {data[0]} Message: {data[1]}, Date: {data[2]}, SenderID: {data[3]},ReceiverID: {data[4]}");
-                    }
-                    Console.WriteLine();
-                }
-                return true;
             }
         }
     }

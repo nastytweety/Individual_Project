@@ -16,6 +16,11 @@ namespace Individual_Project
 
         }
 
+        /// <summary>
+        /// It returns the text of a message given the message id
+        /// </summary>
+        /// <param name="number">The number ID of the message</param>
+        /// <returns>The text of the message</returns>
         public string GetMessageByNumber(int number)
         {
             SqlConnection dbcon = new SqlConnection(connectionstring);
@@ -35,7 +40,11 @@ namespace Individual_Project
             }
             return " ";
         }
-
+        /// <summary>
+        /// Returns the SenderID given the MessageID
+        /// </summary>
+        /// <param name="number">The messageID</param>
+        /// <returns>The senderID</returns>
         public int GetSenderByNumber(int number)
         {
             SqlConnection dbcon = new SqlConnection(connectionstring);
@@ -56,7 +65,11 @@ namespace Individual_Project
             return 0;
         }
 
-
+        /// <summary>
+        /// Returns the ReceiverID given the MessageID
+        /// </summary>
+        /// <param name="number">The messageID</param>
+        /// <returns>The RecieverID</returns>
         public int GetReceiverByNumber(int number)
         {
             SqlConnection dbcon = new SqlConnection(connectionstring);
@@ -76,7 +89,12 @@ namespace Individual_Project
             }
             return 0;
         }
-
+        /// <summary>
+        /// Checks whether a Message belongs to a certain login. 
+        /// </summary>
+        /// <param name="login">The username</param>
+        /// <param name="number">the messageID</param>
+        /// <returns>true if message belongs to certain login</returns>
         public bool CheckValidChoice(string login,int number)
         {
             if(GetLogin(GetReceiverByNumber(number))==login || GetLogin(GetSenderByNumber(number))==login)
@@ -88,7 +106,12 @@ namespace Individual_Project
                 return false;
             }
         }
-
+        /// <summary>
+        /// Updates a message
+        /// </summary>
+        /// <param name="login">The username</param>
+        /// <param name="message">The message text</param>
+        /// <param name="messageid">The messageID</param>
         public void UpdateMessage(string login, string message, int messageid)
         {
             SqlConnection dbcon = new SqlConnection(connectionstring);
@@ -114,21 +137,23 @@ namespace Individual_Project
             }   
         }
 
+        /// <summary>
+        /// Gets the all the required information in order to edit a message and calls the UpdateMessage function.
+        /// </summary>
         public void EditMessage()
         {
             int choice = 0;
-            string login;
 
             string message;
 
-            do
+            Console.WriteLine("Insert username");
+            string login = Console.ReadLine();
+            if (!CheckIfExists(login))
             {
-                Console.WriteLine("Insert Username");
-                login = Console.ReadLine();
-
+                return;
             }
-            while (!ShowUsersMessages(login));
 
+            ShowUsersMessages(login);
             Console.WriteLine("Which message do you wish to edit? Choose by number");
 
             bool x = int.TryParse(Console.ReadLine(), out choice);
@@ -146,6 +171,9 @@ namespace Individual_Project
             UpdateMessage(login, message, choice);
         }
 
+        /// <summary>
+        /// The Menu
+        /// </summary>
         public new void Menu()
         {
             int Choice;
@@ -153,10 +181,12 @@ namespace Individual_Project
             while (!Logout)
             {
                 Console.WriteLine("1. Write new message");
-                Console.WriteLine("2. Read messages");
-                Console.WriteLine("3. View messages");
-                Console.WriteLine("4. Edit messages");
-                Console.WriteLine("5. Logout");
+                Console.WriteLine("2. Open inbox");
+                Console.WriteLine("3. Open sent messages");
+                Console.WriteLine("4. Enter Chat");
+                Console.WriteLine("5. View Messages");
+                Console.WriteLine("6. Edit Messages");
+                Console.WriteLine("7. Logout");
                 if (int.TryParse(Console.ReadLine(), out Choice))
                 {
                     switch (Choice)
@@ -165,15 +195,21 @@ namespace Individual_Project
                             WriteMessage();
                             break;
                         case 2:
-                            ShowMessage();
+                            ShowMessage(1);
                             break;
                         case 3:
-                            ShowUsersMessages();
+                            ShowMessage(0);
                             break;
                         case 4:
-                            EditMessage();
+                            EnterChat();
                             break;
                         case 5:
+                            ShowUsersMessages(null);
+                            break;
+                        case 6:
+                            EditMessage();
+                            break;
+                        case 7:
                             Console.WriteLine();
                             Logout = true;
                             break;

@@ -17,30 +17,32 @@ namespace Individual_Project
 
         }
 
+        /// <summary>
+        /// Updates the details of a user.Login password and role can be updated.The messages of the user are updates too.
+        /// </summary>
         public void UpdateUser()
         {
             string role;
             Console.WriteLine("Insert username");
             string login = Console.ReadLine();
+            if (!CheckIfExists(login))
+            {
+                return;
+            }
 
             SqlConnection dbcon = new SqlConnection(connectionstring);
             using (dbcon)
             {
                 dbcon.Open();
-                var cmd = new SqlCommand($"select login from Users where login='{login}' and Active = '1'", dbcon);
-
-                using (var reader = cmd.ExecuteReader())
-                {
-                    if (!reader.Read())
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine("===Username does not exist===");
-                        Console.WriteLine();
-                        return;
-                    }
-                }
                 Console.WriteLine("Insert new username");
                 string newlogin = Console.ReadLine();
+                if (CheckIfExists(newlogin))
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("===Username exists===");
+                    Console.WriteLine();
+                    return;
+                }
                 Console.WriteLine("Insert new password");
                 string password = Console.ReadLine();
                 Console.WriteLine("The roles are <<1.User>> <<2.MessageViewer>> <<3.MesageEditor>> <<4.MessageHandler>>");
@@ -48,11 +50,12 @@ namespace Individual_Project
                 {
                     Console.WriteLine("Insert new role");
                     role = Console.ReadLine();
-                } while (RoleCheck(role) == false);
+                } while (!RoleCheck(role));
 
 
-                var cmd2 = new SqlCommand($"update Users set Login = '{newlogin}',Password = HASHBYTES('SHA2_256',HASHBYTES('SHA2_256','{password}')), Role = '{role}' where UserID = '{GetUserID(login)}'", dbcon);
+                var cmd2 = new SqlCommand($"update Users set Login = '{newlogin}', Password =  HASHBYTES('SHA2_256',CONCAT('{password}',Salt)), Role = '{role}' where UserID = '{GetUserID(login)}'", dbcon);
                 var affectedRows = cmd2.ExecuteNonQuery();
+             
                 if (affectedRows > 0)
                 {
                     Console.WriteLine();
@@ -61,12 +64,21 @@ namespace Individual_Project
                 }
             }
         }
-
+        /// <summary>
+        /// Creates a new user
+        /// </summary>
         public void CreateUser()
         {
             string role;
             Console.WriteLine("Insert username");
             string login = Console.ReadLine();
+            if (CheckIfExists(login))
+            {
+                Console.WriteLine();
+                Console.WriteLine("===Username exists===");
+                Console.WriteLine();
+                return;
+            }
             Console.WriteLine("Insert password");
             string password = Console.ReadLine();
             Console.WriteLine("The roles are <<1.User>> <<2.MessageViewer>> <<3.MesageEditor>> <<4.MessageHandler>>");
@@ -80,18 +92,7 @@ namespace Individual_Project
             using (dbcon)
             {
                 dbcon.Open();
-                var cmd = new SqlCommand($"select login from Users where login='{login}' and Active ='1'", dbcon);
-                using (var reader = cmd.ExecuteReader())
-                {
-                    if (reader.Read())
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine("===Username exists===");
-                        Console.WriteLine();
-                        return;
-                    }
-                }
-                var cmd2 = new SqlCommand($"insert into Users values('{login}',HASHBYTES('SHA2_256',HASHBYTES('SHA2_256','{password}')),'{role}','1')", dbcon);
+                var cmd2 = new SqlCommand($"EXEC dbo.AddUser @pLogin = '{login}', @pPassword = '{password}',@pRole = '{role}'", dbcon);
                 var affectedRows = cmd2.ExecuteNonQuery();
                 if(affectedRows>0)
                 {
@@ -103,39 +104,37 @@ namespace Individual_Project
             }
         }
 
+        /// <summary>
+        /// Deletes a user by setting the Active field to 0
+        /// </summary>
         public void DeleteUser()
         {
             Console.WriteLine("Insert username");
             string login = Console.ReadLine();
+            if (!CheckIfExists(login))
+            {
+                return;
+            }
 
             SqlConnection dbcon = new SqlConnection(connectionstring);
             using (dbcon)
             {
                 dbcon.Open();
-                var cmd = new SqlCommand($"select login from Users where login='{login}'", dbcon);
-                var reader = cmd.ExecuteReader();
-
-                if (reader.Read())
-                {
-                    reader.Close();
-                    var cmd2 = new SqlCommand($"update Users set Active = '0' where login='{login}'", dbcon);
-                    cmd2.Parameters.AddWithValue("@login", login);
-                    var affectedRows = cmd2.ExecuteNonQuery();
-                    if (affectedRows > 0)
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine("===User deleted===");
-                        Console.WriteLine();
-                    }
+                var cmd2 = new SqlCommand($"update Users set Active = '0' where login='{login}'", dbcon);
+                cmd2.Parameters.AddWithValue("@login", login);
+                var affectedRows = cmd2.ExecuteNonQuery();
+                if (affectedRows > 0)
+                { 
+                    Console.WriteLine();
+                    Console.WriteLine("===User deleted===");
+                    Console.WriteLine();
                 }
-                else
-                {
-                    Console.WriteLine($"User {login} does not exist");
-                }
-
             }
         }
 
+        /// <summary>
+        /// Shows a list of active users
+        /// </summary>
         public void ViewUser()
         {
             SqlConnection dbcon = new SqlConnection(connectionstring);
@@ -148,18 +147,22 @@ namespace Individual_Project
                 {
                     while (reader.Read())
                     {
-                        string[] data = new string[5];
+                        string[] data = new string[6];
                         data[0] = reader[0].ToString();
                         data[1] = reader[1].ToString();
                         data[2] = reader[2].ToString();
                         data[3] = reader[3].ToString();
                         data[4] = reader[4].ToString();
-                        Console.WriteLine($"UserID: {data[0]}, Login: {data[1]}, Role: {data[3]}");
+                        data[5] = reader[5].ToString();
+                        Console.WriteLine($"UserID: {data[0]}, Login: {data[1]}, Role: {data[4]}");
                     }
                 }
             }
         }
 
+        /// <summary>
+        /// The super admin menu
+        /// </summary>
         public new void Menu()
         {
             int Choice;
@@ -167,12 +170,14 @@ namespace Individual_Project
             while (!Logout)
             {
                 Console.WriteLine("1. Write new message");
-                Console.WriteLine("2. Read own messages");
-                Console.WriteLine("3. Create User");
-                Console.WriteLine("4. Delete User");
-                Console.WriteLine("5. Update User");
-                Console.WriteLine("6. View Users");
-                Console.WriteLine("7. Logout");
+                Console.WriteLine("2. Open inbox");
+                Console.WriteLine("3. Open sent messages");
+                Console.WriteLine("4. Enter Chat");
+                Console.WriteLine("5. Create User");
+                Console.WriteLine("6. Delete User");
+                Console.WriteLine("7. Update User");
+                Console.WriteLine("8. View Users");
+                Console.WriteLine("9. Logout");
                 if (int.TryParse(Console.ReadLine(), out Choice))
                 {
                     switch (Choice)
@@ -181,21 +186,27 @@ namespace Individual_Project
                             WriteMessage();
                             break;
                         case 2:
-                            ShowMessage();
+                            ShowMessage(1);
                             break;
                         case 3:
-                            CreateUser();
+                            ShowMessage(0);
                             break;
                         case 4:
-                            DeleteUser();
+                            EnterChat();
                             break;
                         case 5:
-                            UpdateUser();
+                            CreateUser();
                             break;
                         case 6:
-                            ViewUser();
+                            DeleteUser();
                             break;
                         case 7:
+                            UpdateUser();
+                            break;
+                        case 8:
+                            ViewUser();
+                            break;
+                        case 9:
                             Logout = true;
                             break;
                         default:

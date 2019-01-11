@@ -15,70 +15,39 @@ namespace Individual_Project
         {
 
         }
-
+        /// <summary>
+        /// Deletes a specific message or all the messages of a user.
+        /// </summary>
         public void DeleteMessages()
         {
             int choice;
             Console.WriteLine("Insert username");
             string login = Console.ReadLine();
+            if (!CheckIfExists(login))
+            {
+                return;
+            }
 
             SqlConnection dbcon = new SqlConnection(connectionstring);
             using (dbcon)
             {
                 dbcon.Open();
-                var cmd = new SqlCommand($"select login from Users where login='{login}' and Active='1'", dbcon);
-
-                using (var reader = cmd.ExecuteReader())
-                {
-                    if (!reader.Read())
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine("===User does not exist===");
-                        Console.WriteLine();
-                        return;
-                    }
-                }
                 do
                 {
-                    Console.WriteLine("Press 1 to delete outgoing messages");
-                    Console.WriteLine("Press 2 to delete incoming messages");
-                    Console.WriteLine("Press 3 to delete all messages");
-                    Console.WriteLine("Press 4 to delete specific message");
+                    Console.WriteLine("Press 1 to delete all messages");
+                    Console.WriteLine("Press 2 to delete specific message");
                     int.TryParse(Console.ReadLine(), out choice);
-                    if(choice<1||choice>4)
+                    if(choice<1||choice>2)
                     {
                         Console.WriteLine();
                         Console.WriteLine("===Wrong choice.Try again===");
                         Console.WriteLine();
                     }
                 }
-                while (choice < 1 || choice >4);
+                while (choice < 1 || choice >2);
+
 
                 if (choice == 1)
-                {
-                    var cmd2 = new SqlCommand($"delete from Messages where SenderID='{GetUserID(login)}'", dbcon);
-                    cmd2.Parameters.AddWithValue("@login", login);
-                    var affectedRows = cmd2.ExecuteNonQuery();
-                    if (affectedRows > 0)
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine("===Messages Deleted===");
-                        Console.WriteLine();
-                    }
-                }
-                else if(choice ==2)
-                {
-                    var cmd2 = new SqlCommand($"delete from Messages where ReceiverID='{GetUserID(login)}'", dbcon);
-                    cmd2.Parameters.AddWithValue("@login", login);
-                    var affectedRows = cmd2.ExecuteNonQuery();
-                    if (affectedRows > 0)
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine("===Messages Deleted===");
-                        Console.WriteLine();
-                    }
-                }
-                else if (choice == 3)
                 {
                     var cmd2 = new SqlCommand($"delete from Messages where ReceiverID='{GetUserID(login)}' or SenderID='{GetUserID(login)}'", dbcon);
                     cmd2.Parameters.AddWithValue("@login", login);
@@ -93,7 +62,7 @@ namespace Individual_Project
                 else
                 {
                     int Choice;
-                    ShowUsersMessages();
+                    ShowUsersMessages(login);
                     Console.WriteLine("Select message to delete by number");
 
                     bool x = int.TryParse(Console.ReadLine(), out Choice);
@@ -104,8 +73,8 @@ namespace Individual_Project
                         Console.WriteLine();
                         x = int.TryParse(Console.ReadLine(), out Choice);
                     }
-                     var cmd2 = new SqlCommand($"delete from Messages where MessageID='{Choice}'", dbcon);
-                     var affectedRows = cmd2.ExecuteNonQuery();
+                    var cmd2 = new SqlCommand($"delete from Messages where MessageID='{Choice}'", dbcon);
+                    var affectedRows = cmd2.ExecuteNonQuery();
                     if (affectedRows > 0)
                     {
                         Console.WriteLine();
@@ -115,7 +84,9 @@ namespace Individual_Project
                 }
             }
         }
-
+        /// <summary>
+        /// The Menu
+        /// </summary>
         public new void Menu()
         {
             int Choice;
@@ -123,11 +94,13 @@ namespace Individual_Project
             while (!Logout)
             {
                 Console.WriteLine("1. Write new message");
-                Console.WriteLine("2. Read messages");
-                Console.WriteLine("3. View messages");
-                Console.WriteLine("4. Edit messages");
-                Console.WriteLine("5. Delete messages");
-                Console.WriteLine("6. Logout");
+                Console.WriteLine("2. Open inbox");
+                Console.WriteLine("3. Open sent messages");
+                Console.WriteLine("4. Enter Chat");
+                Console.WriteLine("5. View Messages");
+                Console.WriteLine("6. Edit Messages");
+                Console.WriteLine("7. Delete Messages");
+                Console.WriteLine("8. Logout");
                 if (int.TryParse(Console.ReadLine(), out Choice))
                 {
                     switch (Choice)
@@ -136,18 +109,24 @@ namespace Individual_Project
                             WriteMessage();
                             break;
                         case 2:
-                            ShowMessage();
+                            ShowMessage(1);
                             break;
                         case 3:
-                            ShowUsersMessages();
+                            ShowMessage(0);
                             break;
                         case 4:
-                            EditMessage();
+                            EnterChat();
                             break;
                         case 5:
-                            DeleteMessages();
+                            ShowUsersMessages(null);
                             break;
                         case 6:
+                            EditMessage();
+                            break;
+                        case 7:
+                            DeleteMessages();
+                            break;
+                        case 8:
                             Console.WriteLine();
                             Logout = true;
                             break;

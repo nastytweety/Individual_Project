@@ -15,7 +15,6 @@ namespace Individual_Project
     {
         private string connectionstring = "Server=localhost; Database=IndividualProject; Trusted_Connection=True;";
         private string initialconnectionstring = "Server=localhost; Database=master; Trusted_Connection=True;";
-
         /// <summary>
         /// This function checks if the database exists and creates then database if it does not.
         /// The function adds admin super user
@@ -38,13 +37,20 @@ namespace Individual_Project
                         cmd = new SqlCommand("use IndividualProject", dbcon);
                         affectedRows = cmd.ExecuteNonQuery();
                         cmd = new SqlCommand("create table Users(UserID int PRIMARY KEY IDENTITY(1,1),Login nvarchar(50)," +
-                            "Password varbinary(512), Role nvarchar(50), Active bit)", dbcon);
+                            "Password varbinary(512),Salt nvarchar(32), Role nvarchar(50), Active bit)", dbcon);
                         affectedRows = cmd.ExecuteNonQuery();
                         cmd = new SqlCommand("create table Messages(MessageId int PRIMARY KEY IDENTITY(1,1),Message nvarchar(MAX) ,Date datetime ," +
                             "SenderID int REFERENCES Users(UserID)," +
                             "ReceiverID int REFERENCES Users(UserID))", dbcon);
                         affectedRows = cmd.ExecuteNonQuery();
-                        cmd = new SqlCommand("insert into Users values ('admin',HASHBYTES('SHA2_256',HASHBYTES('SHA2_256','admin')),'SuperAdmin','1')", dbcon);
+                        cmd = new SqlCommand("CREATE PROCEDURE dbo.AddUser @pLogin NVARCHAR(50), @pPassword nvarchar(50),@pRole NVARCHAR(50)"+
+                            "AS BEGIN SET NOCOUNT ON DECLARE @pSalt AS NVARCHAR(32) BEGIN TRY "+
+                            "SET @pSalt = CONVERT(nvarchar(32), LEFT(REPLACE(NEWID(), '-', ''), 32)) "+
+                            "INSERT INTO dbo.[Users](Login, Password, Salt, Role, Active) "+
+                            "VALUES(@pLogin, HASHBYTES('SHA2_256', CONCAT(@pPassword, @pSalt)), @pSalt, @pRole, 1) "+
+                            "END TRY  BEGIN CATCH  END CATCH END", dbcon);
+                        affectedRows = cmd.ExecuteNonQuery();
+                        cmd = new SqlCommand("EXEC dbo.AddUser @pLogin = 'admin', @pPassword = 'admin',@pRole = 'SuperAdmin'", dbcon);
                         affectedRows = cmd.ExecuteNonQuery();
                     }
                     catch (Exception e)
@@ -70,7 +76,7 @@ namespace Individual_Project
             using (dbcon)
             {
                 dbcon.Open();
-                var cmd = new SqlCommand($"select * from Users where Login = '{username}' and HASHBYTES('SHA2_256',HASHBYTES('SHA2_256','{password}')) = Password and Active='1'", dbcon);
+                var cmd = new SqlCommand($"select * from Users where Login = '{username}' and HASHBYTES('SHA2_256',CONCAT('{password}',Salt)) = Password and Active='1'", dbcon);
                 using (var reader = cmd.ExecuteReader())
                 {
                     if (reader.Read())
@@ -78,36 +84,37 @@ namespace Individual_Project
                         Console.WriteLine();
                         Console.WriteLine("===Login Successful===");
                         Console.WriteLine();
-                        string[] data = new string[5];
+                        string[] data = new string[6];
                         data[0] = reader[0].ToString();
                         data[1] = reader[1].ToString();
                         data[2] = reader[2].ToString();
                         data[3] = reader[3].ToString();
                         data[4] = reader[4].ToString();
+                        data[5] = reader[5].ToString();
 
-                        if (data[3] == "SuperAdmin")
+                        if (data[4] == "SuperAdmin")
                         {
-                            SuperAdmin temp = new SuperAdmin(int.Parse(data[0]), data[1], data[2], data[3]);
+                            SuperAdmin temp = new SuperAdmin(int.Parse(data[0]), data[1], data[2], data[4]);
                             temp.Menu();
                         }
-                        else if (data[3] == "User" || data[3] == "user")
+                        else if (data[4] == "User" || data[4] == "user")
                         {
-                            User temp = new User(int.Parse(data[0]), data[1], data[2], data[3]);
+                            User temp = new User(int.Parse(data[0]), data[1], data[2], data[4]);
                             temp.Menu();
                         }
-                        else if (data[3] == "MessageViewer" || data[3] == "Messageviewer")
+                        else if (data[4] == "MessageViewer" || data[4] == "Messageviewer")
                         {
-                            Viewer temp = new Viewer(int.Parse(data[0]), data[1], data[2], data[3]);
+                            Viewer temp = new Viewer(int.Parse(data[0]), data[1], data[2], data[4]);
                             temp.Menu();
                         }
-                        else if (data[3] == "MessageEditor")
+                        else if (data[4] == "MessageEditor")
                         {
-                            MessageEditor temp = new MessageEditor(int.Parse(data[0]), data[1], data[2], data[3]);
+                            MessageEditor temp = new MessageEditor(int.Parse(data[0]), data[1], data[2], data[4]);
                             temp.Menu();
                         }
-                        else if (data[3] == "MessageHandler")
+                        else if (data[4] == "MessageHandler")
                         {
-                            MessageHandler temp = new MessageHandler(int.Parse(data[0]), data[1], data[2], data[3]);
+                            MessageHandler temp = new MessageHandler(int.Parse(data[0]), data[1], data[2], data[4]);
                             temp.Menu();
                         }
 
