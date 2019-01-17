@@ -89,7 +89,8 @@ namespace Individual_Project
             using (dbcon)
             { 
                 dbcon.Open();
-                var cmd = new SqlCommand($"select * from Messages where ReceiverID = '{GetUserID(login)}' or SenderID = '{GetUserID(login)}'", dbcon);
+                var cmd = new SqlCommand("select * from Messages where ReceiverID = @user or SenderID = @user", dbcon);
+                cmd.Parameters.AddWithValue("@user", GetUserID(login));
                 using (var reader = cmd.ExecuteReader())
                 {
                     Console.WriteLine();

@@ -13,8 +13,9 @@ namespace Individual_Project
 {
     public class App
     {
-        private string connectionstring = "Server=localhost; Database=IndividualProject; Trusted_Connection=True;";
-        private string initialconnectionstring = "Server=localhost; Database=master; Trusted_Connection=True;";
+        private string connectionstring = Properties.Settings.Default.connectionstring;
+        private string initialconnectionstring = Properties.Settings.Default.initialconnectionstring;
+
         /// <summary>
         /// This function checks if the database exists and creates then database if it does not.
         /// The function adds admin super user
@@ -76,7 +77,9 @@ namespace Individual_Project
             using (dbcon)
             {
                 dbcon.Open();
-                var cmd = new SqlCommand($"select * from Users where Login = '{username}' and HASHBYTES('SHA2_256',CONCAT('{password}',Salt)) = Password and Active='1'", dbcon);
+                var cmd = new SqlCommand($"select UserID, Login, Password, Role from Users where Login = @login and HASHBYTES('SHA2_256',CONCAT(@password ,Salt)) = Password and Active='1'", dbcon);
+                cmd.Parameters.AddWithValue("@login", username);
+                cmd.Parameters.AddWithValue("@password", password);
                 using (var reader = cmd.ExecuteReader())
                 {
                     if (reader.Read())
@@ -84,37 +87,37 @@ namespace Individual_Project
                         Console.WriteLine();
                         Console.WriteLine("===Login Successful===");
                         Console.WriteLine();
-                        string[] data = new string[6];
+                        string[] data = new string[4];
                         data[0] = reader[0].ToString();
                         data[1] = reader[1].ToString();
                         data[2] = reader[2].ToString();
                         data[3] = reader[3].ToString();
-                        data[4] = reader[4].ToString();
-                        data[5] = reader[5].ToString();
+                        //data[4] = reader[4].ToString();
+                        //data[5] = reader[5].ToString();
 
-                        if (data[4] == "SuperAdmin")
+                        if (data[3] == "SuperAdmin")
                         {
-                            SuperAdmin temp = new SuperAdmin(int.Parse(data[0]), data[1], data[2], data[4]);
+                            SuperAdmin temp = new SuperAdmin(int.Parse(data[0]), data[1], data[2], data[3]);
                             temp.Menu();
                         }
-                        else if (data[4] == "User" || data[4] == "user")
+                        else if (data[3] == "User" || data[3] == "user")
                         {
-                            User temp = new User(int.Parse(data[0]), data[1], data[2], data[4]);
+                            User temp = new User(int.Parse(data[0]), data[1], data[2], data[3]);
                             temp.Menu();
                         }
-                        else if (data[4] == "MessageViewer" || data[4] == "Messageviewer")
+                        else if (data[3] == "MessageViewer" || data[3] == "Messageviewer")
                         {
-                            Viewer temp = new Viewer(int.Parse(data[0]), data[1], data[2], data[4]);
+                            Viewer temp = new Viewer(int.Parse(data[0]), data[1], data[2], data[3]);
                             temp.Menu();
                         }
-                        else if (data[4] == "MessageEditor")
+                        else if (data[3] == "MessageEditor")
                         {
-                            MessageEditor temp = new MessageEditor(int.Parse(data[0]), data[1], data[2], data[4]);
+                            MessageEditor temp = new MessageEditor(int.Parse(data[0]), data[1], data[2], data[3]);
                             temp.Menu();
                         }
-                        else if (data[4] == "MessageHandler")
+                        else if (data[3] == "MessageHandler")
                         {
-                            MessageHandler temp = new MessageHandler(int.Parse(data[0]), data[1], data[2], data[4]);
+                            MessageHandler temp = new MessageHandler(int.Parse(data[0]), data[1], data[2], data[3]);
                             temp.Menu();
                         }
 
@@ -139,7 +142,7 @@ namespace Individual_Project
             while (exit)
             {
                 Console.WriteLine("1. Login");
-                Console.WriteLine("2. Exit");
+                Console.WriteLine("2. Exit App");
                 int.TryParse(Console.ReadLine(), out choice);
                 if (choice == 1)
                 {

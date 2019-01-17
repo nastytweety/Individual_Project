@@ -28,8 +28,8 @@ namespace Individual_Project
             using (dbcon)
             {
                 dbcon.Open();
-                var cmd = new SqlCommand($"select Message from Messages where MessageID = '{number}'", dbcon);
-
+                var cmd = new SqlCommand("select Message from Messages where MessageID = @number", dbcon);
+                cmd.Parameters.AddWithValue("@number", number);
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
@@ -52,8 +52,8 @@ namespace Individual_Project
             using (dbcon)
             {
                 dbcon.Open();
-                var cmd = new SqlCommand($"select SenderID from Messages where MessageID = '{number}'", dbcon);
-
+                var cmd = new SqlCommand("select SenderID from Messages where MessageID = @number", dbcon);
+                cmd.Parameters.AddWithValue("@number", number);
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
@@ -77,8 +77,8 @@ namespace Individual_Project
             using (dbcon)
             {
                 dbcon.Open();
-                var cmd = new SqlCommand($"select ReceiverID from Messages where MessageID = '{number}'", dbcon);
-
+                var cmd = new SqlCommand($"select ReceiverID from Messages where MessageID = @number", dbcon);
+                cmd.Parameters.AddWithValue("@number", number);
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())

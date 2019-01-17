@@ -49,8 +49,8 @@ namespace Individual_Project
 
                 if (choice == 1)
                 {
-                    var cmd2 = new SqlCommand($"delete from Messages where ReceiverID='{GetUserID(login)}' or SenderID='{GetUserID(login)}'", dbcon);
-                    cmd2.Parameters.AddWithValue("@login", login);
+                    var cmd2 = new SqlCommand("delete from Messages where ReceiverID= @login or SenderID= @login", dbcon);
+                    cmd2.Parameters.AddWithValue("@login", GetUserID(login));
                     var affectedRows = cmd2.ExecuteNonQuery();
                     if (affectedRows > 0)
                     {
@@ -73,7 +73,8 @@ namespace Individual_Project
                         Console.WriteLine();
                         x = int.TryParse(Console.ReadLine(), out Choice);
                     }
-                    var cmd2 = new SqlCommand($"delete from Messages where MessageID='{Choice}'", dbcon);
+                    var cmd2 = new SqlCommand("delete from Messages where MessageID= @choice", dbcon);
+                    cmd2.Parameters.AddWithValue("@choice", Choice);
                     var affectedRows = cmd2.ExecuteNonQuery();
                     if (affectedRows > 0)
                     {

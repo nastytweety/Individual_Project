@@ -11,7 +11,7 @@ namespace Individual_Project
 {
     public class User
     {
-        protected string connectionstring = "Server=localhost;Database=IndividualProject;Trusted_Connection=True;";
+        protected string connectionstring = Properties.Settings.Default.connectionstring;
         protected List<string[]> Loaded_Messages = new List<string[]>();
         private string path = "c:\\Projects\\messages.txt";
 
@@ -68,7 +68,8 @@ namespace Individual_Project
             using (dbcon)
             {
                 dbcon.Open();
-                var cmd = new SqlCommand($"select UserID from Users where Login='{Login}' and Active = '1'", dbcon);
+                var cmd = new SqlCommand($"select UserID from Users where Login=@login and Active = '1'", dbcon);
+                cmd.Parameters.AddWithValue("@login", Login);
                 using (var reader = cmd.ExecuteReader())
                 {
                     if (reader.Read())
@@ -91,7 +92,8 @@ namespace Individual_Project
             using (dbcon)
             {
                 dbcon.Open();
-                var cmd = new SqlCommand($"select Login from Users where UserID='{UserID}' and Active='1'", dbcon);
+                var cmd = new SqlCommand("select Login from Users where UserID=@UserID and Active='1'", dbcon);
+                cmd.Parameters.AddWithValue("@UserID", UserID);
                 using (var reader = cmd.ExecuteReader())
                 {
                     if (reader.Read())
@@ -114,7 +116,8 @@ namespace Individual_Project
             {
                 dbcon.Open();
 
-                var cmd = new SqlCommand($"select login from Users where login='{Login}' and Active ='1'", dbcon);
+                var cmd = new SqlCommand("select login from Users where login=@login and Active ='1'", dbcon);
+                cmd.Parameters.AddWithValue("@login", Login);
                 using (var reader = cmd.ExecuteReader())
                 {
                     if (!reader.Read())
@@ -267,11 +270,13 @@ namespace Individual_Project
                 var cmd = new SqlCommand();
                 if (choice == 1)
                 {
-                    cmd = new SqlCommand($"select * from Messages where ReceiverID = '{GetUserID(this.Login).ToString()}'", dbcon);
+                    cmd = new SqlCommand($"select * from Messages where ReceiverID = @receiver", dbcon);
+                    cmd.Parameters.AddWithValue("@receiver", GetUserID(this.Login).ToString());
                 }
                 else if (choice == 0)
                 {
-                    cmd = new SqlCommand($"select * from Messages where SenderID = '{GetUserID(this.Login).ToString()}'", dbcon);
+                    cmd = new SqlCommand($"select * from Messages where SenderID = @sender", dbcon);
+                    cmd.Parameters.AddWithValue("@sender", GetUserID(this.Login).ToString());
                 }
 
                 using (var reader = cmd.ExecuteReader())
@@ -311,8 +316,10 @@ namespace Individual_Project
             {
                 dbcon.Open();
                 var cmd = new SqlCommand();
-                cmd = new SqlCommand($"select * from Messages where (ReceiverID = '{GetUserID(this.Login).ToString()}' and SenderID = '{GetUserID(login)}')"+
-                    $"or (SenderID = '{GetUserID(this.Login).ToString()}' and ReceiverID = '{GetUserID(login)}') ", dbcon);
+                cmd = new SqlCommand("select * from Messages where (ReceiverID = @receiver and SenderID = @sender)"+
+                    "or (SenderID = @receiver and ReceiverID = @sender) ", dbcon);
+                cmd.Parameters.AddWithValue("@receiver", GetUserID(this.Login).ToString());
+                cmd.Parameters.AddWithValue("@sender", GetUserID(login));
                 using (var reader = cmd.ExecuteReader())
                 {
                     Console.WriteLine("\t\t===CHAT MODE===");

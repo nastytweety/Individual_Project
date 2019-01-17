@@ -53,7 +53,11 @@ namespace Individual_Project
                 } while (!RoleCheck(role));
 
 
-                var cmd2 = new SqlCommand($"update Users set Login = '{newlogin}', Password =  HASHBYTES('SHA2_256',CONCAT('{password}',Salt)), Role = '{role}' where UserID = '{GetUserID(login)}'", dbcon);
+                var cmd2 = new SqlCommand("update Users set Login = @login, Password =  HASHBYTES('SHA2_256',CONCAT(@password,Salt)), Role = @role where UserID = @userid", dbcon);
+                cmd2.Parameters.AddWithValue("@login", newlogin);
+                cmd2.Parameters.AddWithValue("@password", password);
+                cmd2.Parameters.AddWithValue("@role", role);
+                cmd2.Parameters.AddWithValue("@userid", GetUserID(login));
                 var affectedRows = cmd2.ExecuteNonQuery();
              
                 if (affectedRows > 0)
@@ -92,7 +96,10 @@ namespace Individual_Project
             using (dbcon)
             {
                 dbcon.Open();
-                var cmd2 = new SqlCommand($"EXEC dbo.AddUser @pLogin = '{login}', @pPassword = '{password}',@pRole = '{role}'", dbcon);
+                var cmd2 = new SqlCommand($"EXEC dbo.AddUser @pLogin = @login, @pPassword = @password ,@pRole = @role", dbcon);
+                cmd2.Parameters.AddWithValue("@login", login);
+                cmd2.Parameters.AddWithValue("@password", password);
+                cmd2.Parameters.AddWithValue("@role", role);
                 var affectedRows = cmd2.ExecuteNonQuery();
                 if(affectedRows>0)
                 {
@@ -120,7 +127,7 @@ namespace Individual_Project
             using (dbcon)
             {
                 dbcon.Open();
-                var cmd2 = new SqlCommand($"update Users set Active = '0' where login='{login}'", dbcon);
+                var cmd2 = new SqlCommand($"update Users set Active = '0' where login= @login", dbcon);
                 cmd2.Parameters.AddWithValue("@login", login);
                 var affectedRows = cmd2.ExecuteNonQuery();
                 if (affectedRows > 0)
@@ -142,19 +149,16 @@ namespace Individual_Project
             using (dbcon)
             {
                 dbcon.Open();
-                var cmd = new SqlCommand("select * from Users where Active = '1'", dbcon);
+                var cmd = new SqlCommand("select UserID,Login,Role from Users where Active = '1'", dbcon);
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
                     {
-                        string[] data = new string[6];
+                        string[] data = new string[3];
                         data[0] = reader[0].ToString();
                         data[1] = reader[1].ToString();
                         data[2] = reader[2].ToString();
-                        data[3] = reader[3].ToString();
-                        data[4] = reader[4].ToString();
-                        data[5] = reader[5].ToString();
-                        Console.WriteLine($"UserID: {data[0]}, Login: {data[1]}, Role: {data[4]}");
+                        Console.WriteLine($"UserID: {data[0]}, Login: {data[1]}, Role: {data[2]}");
                     }
                 }
             }
