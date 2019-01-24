@@ -16,79 +16,7 @@ namespace Individual_Project
 
         }
 
-        /// <summary>
-        /// It returns the text of a message given the message id
-        /// </summary>
-        /// <param name="number">The number ID of the message</param>
-        /// <returns>The text of the message</returns>
-        public string GetMessageByNumber(int number)
-        {
-            SqlConnection dbcon = new SqlConnection(connectionstring);
-
-            using (dbcon)
-            {
-                dbcon.Open();
-                var cmd = new SqlCommand("select Message from Messages where MessageID = @number", dbcon);
-                cmd.Parameters.AddWithValue("@number", number);
-                using (var reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        return reader[0].ToString();
-                    }
-                }
-            }
-            return " ";
-        }
-        /// <summary>
-        /// Returns the SenderID given the MessageID
-        /// </summary>
-        /// <param name="number">The messageID</param>
-        /// <returns>The senderID</returns>
-        public int GetSenderByNumber(int number)
-        {
-            SqlConnection dbcon = new SqlConnection(connectionstring);
-
-            using (dbcon)
-            {
-                dbcon.Open();
-                var cmd = new SqlCommand("select SenderID from Messages where MessageID = @number", dbcon);
-                cmd.Parameters.AddWithValue("@number", number);
-                using (var reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        return int.Parse(reader[0].ToString());
-                    }
-                } 
-            }
-            return 0;
-        }
-
-        /// <summary>
-        /// Returns the ReceiverID given the MessageID
-        /// </summary>
-        /// <param name="number">The messageID</param>
-        /// <returns>The RecieverID</returns>
-        public int GetReceiverByNumber(int number)
-        {
-            SqlConnection dbcon = new SqlConnection(connectionstring);
-
-            using (dbcon)
-            {
-                dbcon.Open();
-                var cmd = new SqlCommand($"select ReceiverID from Messages where MessageID = @number", dbcon);
-                cmd.Parameters.AddWithValue("@number", number);
-                using (var reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        return int.Parse(reader[0].ToString());
-                    }
-                }
-            }
-            return 0;
-        }
+        
         /// <summary>
         /// Checks whether a Message belongs to a certain login. 
         /// </summary>
@@ -97,7 +25,8 @@ namespace Individual_Project
         /// <returns>true if message belongs to certain login</returns>
         public bool CheckValidChoice(string login,int number)
         {
-            if(GetLogin(GetReceiverByNumber(number))==login || GetLogin(GetSenderByNumber(number))==login)
+            DbContext db = new DbContext(); 
+            if(db.GetLogin(db.GetReceiverByNumber(number))==login ||db.GetLogin(db.GetSenderByNumber(number))==login)
             {
                 return true;
             }
@@ -106,36 +35,6 @@ namespace Individual_Project
                 return false;
             }
         }
-        /// <summary>
-        /// Updates a message
-        /// </summary>
-        /// <param name="login">The username</param>
-        /// <param name="message">The message text</param>
-        /// <param name="messageid">The messageID</param>
-        public void UpdateMessage(string login, string message, int messageid)
-        {
-            SqlConnection dbcon = new SqlConnection(connectionstring);
-
-            using (dbcon)
-            {
-                dbcon.Open();
-
-
-                var cmd = new SqlCommand("update Messages set Message = @message , Date = @date, SenderID = @senderid , ReceiverID=@receiverid where MessageID = @messageid", dbcon);
-                cmd.Parameters.AddWithValue("@message", message);
-                cmd.Parameters.AddWithValue("@date", DateTime.Now);
-                cmd.Parameters.AddWithValue("@senderid", GetSenderByNumber(messageid));
-                cmd.Parameters.AddWithValue("@receiverid", GetReceiverByNumber(messageid));
-                cmd.Parameters.AddWithValue("@messageid", messageid);
-                var affectedRows = cmd.ExecuteNonQuery();
-                if(affectedRows>0)
-                {
-                    Console.WriteLine();
-                    Console.WriteLine("===Message Updated===");
-                    Console.WriteLine();
-                }
-            }   
-        }
 
         /// <summary>
         /// Gets the all the required information in order to edit a message and calls the UpdateMessage function.
@@ -143,17 +42,17 @@ namespace Individual_Project
         public void EditMessage()
         {
             int choice = 0;
-
+            DbContext db = new DbContext();
             string message;
 
             Console.WriteLine("Insert username");
             string login = Console.ReadLine();
-            if (!CheckIfExists(login))
+            if (!db.CheckIfExists(login))
             {
                 return;
             }
 
-            ShowUsersMessages(login);
+            ShowUserAllMessages(login);
             Console.WriteLine("Which message do you wish to edit? Choose by number");
 
             bool x = int.TryParse(Console.ReadLine(), out choice);
@@ -165,10 +64,10 @@ namespace Individual_Project
                 x = int.TryParse(Console.ReadLine(), out choice);
             }
 
-            Console.WriteLine(GetMessageByNumber(choice));
+            Console.WriteLine(db.GetMessageByNumber(choice));
             Console.WriteLine("Edit message here:");
             message = Console.ReadLine();
-            UpdateMessage(login, message, choice);
+            db.UpdateMessage(login, message, choice);
         }
 
         /// <summary>
@@ -204,7 +103,7 @@ namespace Individual_Project
                             EnterChat();
                             break;
                         case 5:
-                            ShowUsersMessages(null);
+                            ShowUserAllMessages(null);
                             break;
                         case 6:
                             EditMessage();

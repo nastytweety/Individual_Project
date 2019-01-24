@@ -11,7 +11,6 @@ namespace Individual_Project
 {
     public class User
     {
-        protected string connectionstring = Properties.Settings.Default.connectionstring;
         protected List<string[]> Loaded_Messages = new List<string[]>();
         private string path = "c:\\Projects\\messages.txt";
 
@@ -30,7 +29,7 @@ namespace Individual_Project
         /// <summary>
         /// Returns the role of a user
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The Role</returns>
         protected string FindRole()
         {
             return Role;
@@ -57,83 +56,7 @@ namespace Individual_Project
             }
         }
 
-        /// <summary>
-        /// Returns the UserID of a user
-        /// </summary>
-        /// <param name="Login">The user Login</param>
-        /// <returns>the UserID</returns>
-        protected int GetUserID(string Login)
-        {
-            SqlConnection dbcon = new SqlConnection(connectionstring);
-            using (dbcon)
-            {
-                dbcon.Open();
-                var cmd = new SqlCommand($"select UserID from Users where Login=@login and Active = '1'", dbcon);
-                cmd.Parameters.AddWithValue("@login", Login);
-                using (var reader = cmd.ExecuteReader())
-                {
-                    if (reader.Read())
-                    {
-                        return (int)reader[0];
-                    }
-                }
-            }
-            return 0;
-        }
-
-        /// <summary>
-        /// Returns the Login given a UserID
-        /// </summary>
-        /// <param name="UserID"> the UserID</param>
-        /// <returns>The Login</returns>
-        protected string GetLogin(int UserID)
-        {
-            SqlConnection dbcon = new SqlConnection(connectionstring);
-            using (dbcon)
-            {
-                dbcon.Open();
-                var cmd = new SqlCommand("select Login from Users where UserID=@UserID and Active='1'", dbcon);
-                cmd.Parameters.AddWithValue("@UserID", UserID);
-                using (var reader = cmd.ExecuteReader())
-                {
-                    if (reader.Read())
-                    {
-                        return reader[0].ToString();
-                    }
-                }
-            }
-            return null;
-        }
-        /// <summary>
-        /// Checks if a Login exists in the database
-        /// </summary>
-        /// <param name="Login">the login to be checked</param>
-        /// <returns>returns true if the login exists.False otherwise</returns>
-        public bool CheckIfExists(string Login)
-        {
-            SqlConnection dbcon = new SqlConnection(connectionstring);
-            using (dbcon)
-            {
-                dbcon.Open();
-
-                var cmd = new SqlCommand("select login from Users where login=@login and Active ='1'", dbcon);
-                cmd.Parameters.AddWithValue("@login", Login);
-                using (var reader = cmd.ExecuteReader())
-                {
-                    if (!reader.Read())
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine("===Username does not exist===");
-                        Console.WriteLine();
-                        return false;
-                    }
-                    else
-                    {
-                        return true;
-                    }
-                }
-            }
-        }
+       
         /// <summary>
         /// The user Menu
         /// </summary>
@@ -184,51 +107,24 @@ namespace Individual_Project
         protected void WriteMessage()
         {
             string sender = this.Login;
+            DbContext db = new DbContext();
             Console.WriteLine("Insert receivers username");
             string receiver = Console.ReadLine();
-            if(!CheckIfExists(receiver))
+            if(!db.CheckIfExists(receiver))
             {
                 return;
             }
-            string message = WriteToDatabase(receiver);
+            string message = db.WriteToDatabase(receiver,sender);
             WriteToFile(receiver, sender, message);
         }
-        /// <summary>
-        /// Strores the message to the database
-        /// </summary>
-        /// <param name="receiver">the name of the receiver</param>
-        /// <returns>the message</returns>
-        protected string WriteToDatabase(string receiver)
-        {
-            string sender = this.Login;
-            Console.WriteLine("Insert Message");
-            string message = Console.ReadLine();
-
-            SqlConnection dbcon = new SqlConnection(connectionstring);
-            using (dbcon)
-            {
-                dbcon.Open();
-                var cmd = new SqlCommand("insert into Messages values(@Message,@Date,@Sender,@Receiver)", dbcon);
-                cmd.Parameters.AddWithValue("@Message", message);
-                cmd.Parameters.AddWithValue("@Date", System.DateTime.Now);
-                cmd.Parameters.AddWithValue("@Sender", GetUserID(sender));
-                cmd.Parameters.AddWithValue("@Receiver", GetUserID(receiver));
-                var affectedRows = cmd.ExecuteNonQuery();
-                if (affectedRows > 0)
-                {
-                    Console.WriteLine();
-                    Console.WriteLine("===Message Sent!!!===");
-                    Console.WriteLine();
-                }
-            }
-            return message;
-        }
+      
         /// <summary>
         /// Stores the message to file message.txt
         /// </summary>
         /// <param name="receiver">name of the receiver</param>
         /// <param name="sender">name of sender</param>
         /// <param name="message">message</param>
+        /// 
         protected void WriteToFile(string receiver,string sender,string message)
         {
             if (!File.Exists(path))
@@ -262,40 +158,8 @@ namespace Individual_Project
         /// <param name="choice">If choice=0 the user is the sender .if choice =1 the user is the receiver</param>
         protected void ShowMessage(int choice)
         {
-            SqlConnection dbcon = new SqlConnection(connectionstring);
-
-            using (dbcon)
-            {
-                dbcon.Open();
-                var cmd = new SqlCommand();
-                if (choice == 1)
-                {
-                    cmd = new SqlCommand($"select * from Messages where ReceiverID = @receiver", dbcon);
-                    cmd.Parameters.AddWithValue("@receiver", GetUserID(this.Login).ToString());
-                }
-                else if (choice == 0)
-                {
-                    cmd = new SqlCommand($"select * from Messages where SenderID = @sender", dbcon);
-                    cmd.Parameters.AddWithValue("@sender", GetUserID(this.Login).ToString());
-                }
-
-                using (var reader = cmd.ExecuteReader())
-                {
-                    Console.WriteLine();
-                    while (reader.Read())
-                    {
-                        string[] data = new string[5];
-                        data[0] = reader[0].ToString();
-                        data[1] = reader[1].ToString();
-                        data[2] = reader[2].ToString();
-                        data[3] = reader[3].ToString();
-                        data[4] = reader[4].ToString();
-
-                        Console.WriteLine($"ID: {data[0]} Message: {data[1]}, Date: {data[2]}, Sender: {GetLogin(int.Parse(data[3]))},SenderID: {data[3]},Receiver: {GetLogin(int.Parse(data[4]))}");
-                    }
-                    Console.WriteLine();
-                }
-            }
+            DbContext db = new DbContext();
+            db.ShowMessage(choice, this.Login);
         }
 
         /// <summary>
@@ -303,64 +167,30 @@ namespace Individual_Project
         /// </summary>
         protected void EnterChat()
         {
+            DbContext db = new DbContext();
+            string choice;
             Console.WriteLine("Chat with who?");
-            string login = Console.ReadLine();
-            if (!CheckIfExists(login))
+            string username = Console.ReadLine();
+            if (!db.CheckIfExists(username))
             {
                 return;
             }
-
-            SqlConnection dbcon = new SqlConnection(connectionstring);
-
-            using (dbcon)
-            {
-                dbcon.Open();
-                var cmd = new SqlCommand();
-                cmd = new SqlCommand("select * from Messages where (ReceiverID = @receiver and SenderID = @sender)"+
-                    "or (SenderID = @receiver and ReceiverID = @sender) ", dbcon);
-                cmd.Parameters.AddWithValue("@receiver", GetUserID(this.Login).ToString());
-                cmd.Parameters.AddWithValue("@sender", GetUserID(login));
-                using (var reader = cmd.ExecuteReader())
-                {
-                    Console.WriteLine("\t\t===CHAT MODE===");
-                    Console.WriteLine();
-                    while (reader.Read())
-                    {
-                        string[] data = new string[5];
-                        data[0] = reader[0].ToString();
-                        data[1] = reader[1].ToString();
-                        data[2] = reader[2].ToString();
-                        data[3] = reader[3].ToString();
-                        data[4] = reader[4].ToString();
-
-                        
-                        if (GetLogin(int.Parse(data[3])) == this.Login)
-                        {
-                            Console.WriteLine($" {data[1]}  ");
-                        }
-                        else
-                        {
-                            Console.WriteLine($" \t\t {data[1]} ");
-                        }
-                    }
-                    Console.WriteLine();
-                }
-            }
-            string choice;
+            db.EnterChat(username,this.Login);
+            
             do
             {
                 Console.WriteLine("Do you want to write a message?Y/N");
                 choice = Console.ReadLine();
             } while (choice != "Y" && choice != "N");
-            if(choice=="Y")
+            if (choice == "Y")
             {
-                WriteToDatabase(login);
+                db.WriteToDatabase(username, Login);
             }
             else
             {
                 Console.WriteLine();
                 return;
-            }  
+            }
         }
     }
 }

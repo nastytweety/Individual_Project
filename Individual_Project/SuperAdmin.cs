@@ -23,60 +23,46 @@ namespace Individual_Project
         public void UpdateUser()
         {
             string role;
+            DbContext db = new DbContext();
             Console.WriteLine("Insert username");
             string login = Console.ReadLine();
-            if (!CheckIfExists(login))
+            if (!db.CheckIfExists(login))
             {
                 return;
             }
 
-            SqlConnection dbcon = new SqlConnection(connectionstring);
-            using (dbcon)
+            Console.WriteLine("Insert new username");
+            string newlogin = Console.ReadLine();
+            if (db.CheckIfExists(newlogin))
             {
-                dbcon.Open();
-                Console.WriteLine("Insert new username");
-                string newlogin = Console.ReadLine();
-                if (CheckIfExists(newlogin))
-                {
-                    Console.WriteLine();
-                    Console.WriteLine("===Username exists===");
-                    Console.WriteLine();
-                    return;
-                }
-                Console.WriteLine("Insert new password");
-                string password = Console.ReadLine();
-                Console.WriteLine("The roles are <<1.User>> <<2.MessageViewer>> <<3.MesageEditor>> <<4.MessageHandler>>");
-                do
-                {
-                    Console.WriteLine("Insert new role");
-                    role = Console.ReadLine();
-                } while (!RoleCheck(role));
-
-
-                var cmd2 = new SqlCommand("update Users set Login = @login, Password =  HASHBYTES('SHA2_256',CONCAT(@password,Salt)), Role = @role where UserID = @userid", dbcon);
-                cmd2.Parameters.AddWithValue("@login", newlogin);
-                cmd2.Parameters.AddWithValue("@password", password);
-                cmd2.Parameters.AddWithValue("@role", role);
-                cmd2.Parameters.AddWithValue("@userid", GetUserID(login));
-                var affectedRows = cmd2.ExecuteNonQuery();
-             
-                if (affectedRows > 0)
-                {
-                    Console.WriteLine();
-                    Console.WriteLine("===User updated===");
-                    Console.WriteLine();
-                }
+                Console.WriteLine();
+                Console.WriteLine("===Username exists===");
+                Console.WriteLine();
+                return;
             }
+
+            Console.WriteLine("Insert new password");
+            string password = Console.ReadLine();
+
+            Console.WriteLine("The roles are <<1.User>> <<2.MessageViewer>> <<3.MesageEditor>> <<4.MessageHandler>>");
+            do
+            {
+                Console.WriteLine("Insert new role");
+                role = Console.ReadLine();
+            } while (!RoleCheck(role));
+            db.Update(login, newlogin, password, role);
         }
+
         /// <summary>
         /// Creates a new user
         /// </summary>
         public void CreateUser()
         {
             string role;
+            DbContext db = new DbContext();
             Console.WriteLine("Insert username");
             string login = Console.ReadLine();
-            if (CheckIfExists(login))
+            if (db.CheckIfExists(login))
             {
                 Console.WriteLine();
                 Console.WriteLine("===Username exists===");
@@ -92,23 +78,7 @@ namespace Individual_Project
                 role = Console.ReadLine();
             } while (RoleCheck(role) == false);
 
-            SqlConnection dbcon = new SqlConnection(connectionstring);
-            using (dbcon)
-            {
-                dbcon.Open();
-                var cmd2 = new SqlCommand($"EXEC dbo.AddUser @pLogin = @login, @pPassword = @password ,@pRole = @role", dbcon);
-                cmd2.Parameters.AddWithValue("@login", login);
-                cmd2.Parameters.AddWithValue("@password", password);
-                cmd2.Parameters.AddWithValue("@role", role);
-                var affectedRows = cmd2.ExecuteNonQuery();
-                if(affectedRows>0)
-                {
-                    Console.WriteLine();
-                    Console.WriteLine("===User created===");
-                    Console.WriteLine();
-                }
-                
-            }
+            db.Insert(login,password,role);
         }
 
         /// <summary>
@@ -116,27 +86,15 @@ namespace Individual_Project
         /// </summary>
         public void DeleteUser()
         {
+            DbContext db = new DbContext();
             Console.WriteLine("Insert username");
             string login = Console.ReadLine();
-            if (!CheckIfExists(login))
+            if (!db.CheckIfExists(login))
             {
                 return;
             }
 
-            SqlConnection dbcon = new SqlConnection(connectionstring);
-            using (dbcon)
-            {
-                dbcon.Open();
-                var cmd2 = new SqlCommand($"update Users set Active = '0' where login= @login", dbcon);
-                cmd2.Parameters.AddWithValue("@login", login);
-                var affectedRows = cmd2.ExecuteNonQuery();
-                if (affectedRows > 0)
-                { 
-                    Console.WriteLine();
-                    Console.WriteLine("===User deleted===");
-                    Console.WriteLine();
-                }
-            }
+            db.Delete(login);
         }
 
         /// <summary>
@@ -144,24 +102,8 @@ namespace Individual_Project
         /// </summary>
         public void ViewUser()
         {
-            SqlConnection dbcon = new SqlConnection(connectionstring);
-
-            using (dbcon)
-            {
-                dbcon.Open();
-                var cmd = new SqlCommand("select UserID,Login,Role from Users where Active = '1'", dbcon);
-                using (var reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        string[] data = new string[3];
-                        data[0] = reader[0].ToString();
-                        data[1] = reader[1].ToString();
-                        data[2] = reader[2].ToString();
-                        Console.WriteLine($"UserID: {data[0]}, Login: {data[1]}, Role: {data[2]}");
-                    }
-                }
-            }
+            DbContext db = new DbContext();
+            db.View();
         }
 
         /// <summary>

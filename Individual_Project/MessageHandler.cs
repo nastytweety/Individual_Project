@@ -21,70 +21,52 @@ namespace Individual_Project
         public void DeleteMessages()
         {
             int choice;
+            DbContext db = new DbContext();
             Console.WriteLine("Insert username");
             string login = Console.ReadLine();
-            if (!CheckIfExists(login))
+            if (!db.CheckIfExists(login))
             {
                 return;
             }
 
-            SqlConnection dbcon = new SqlConnection(connectionstring);
-            using (dbcon)
+            do
             {
-                dbcon.Open();
-                do
+                Console.WriteLine("Press 1 to delete all messages");
+                Console.WriteLine("Press 2 to delete specific message");
+                int.TryParse(Console.ReadLine(), out choice);
+                if (choice < 1 || choice > 2)
                 {
-                    Console.WriteLine("Press 1 to delete all messages");
-                    Console.WriteLine("Press 2 to delete specific message");
-                    int.TryParse(Console.ReadLine(), out choice);
-                    if(choice<1||choice>2)
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine("===Wrong choice.Try again===");
-                        Console.WriteLine();
-                    }
-                }
-                while (choice < 1 || choice >2);
-
-
-                if (choice == 1)
-                {
-                    var cmd2 = new SqlCommand("delete from Messages where ReceiverID= @login or SenderID= @login", dbcon);
-                    cmd2.Parameters.AddWithValue("@login", GetUserID(login));
-                    var affectedRows = cmd2.ExecuteNonQuery();
-                    if (affectedRows > 0)
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine("===Messages Deleted===");
-                        Console.WriteLine();
-                    }
-                }
-                else
-                {
-                    int Choice;
-                    ShowUsersMessages(login);
-                    Console.WriteLine("Select message to delete by number");
-
-                    bool x = int.TryParse(Console.ReadLine(), out Choice);
-                    while (x == false || !CheckValidChoice(login, Choice))
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine("===Wrong Choice!!Choose a valid number===");
-                        Console.WriteLine();
-                        x = int.TryParse(Console.ReadLine(), out Choice);
-                    }
-                    var cmd2 = new SqlCommand("delete from Messages where MessageID= @choice", dbcon);
-                    cmd2.Parameters.AddWithValue("@choice", Choice);
-                    var affectedRows = cmd2.ExecuteNonQuery();
-                    if (affectedRows > 0)
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine("===Message Deleted===");
-                        Console.WriteLine();
-                    }
+                    Console.WriteLine();
+                    Console.WriteLine("===Wrong choice.Try again===");
+                    Console.WriteLine();
                 }
             }
+            while (choice < 1 || choice > 2);
+
+
+            if (choice == 1)
+            {
+                db.DeleteAll(this.Login);
+            }
+            else
+            {
+                int Choice;
+                ShowUserAllMessages(login);
+                Console.WriteLine("Select message to delete by number");
+
+                bool x = int.TryParse(Console.ReadLine(), out Choice);
+                while (x == false || !CheckValidChoice(login, Choice))
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("===Wrong Choice!!Choose a valid number===");
+                    Console.WriteLine();
+                    x = int.TryParse(Console.ReadLine(), out Choice);
+                }
+                db.Delete(Choice);
+            }
+
         }
+
         /// <summary>
         /// The Menu
         /// </summary>
@@ -119,7 +101,7 @@ namespace Individual_Project
                             EnterChat();
                             break;
                         case 5:
-                            ShowUsersMessages(null);
+                            ShowUserAllMessages(null);
                             break;
                         case 6:
                             EditMessage();

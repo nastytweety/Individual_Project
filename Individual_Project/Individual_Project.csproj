@@ -59,6 +59,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App.cs" />
+    <Compile Include="DbContext.cs" />
     <Compile Include="MessageEditor.cs" />
     <Compile Include="MessageHandler.cs" />
     <Compile Include="Program.cs" />

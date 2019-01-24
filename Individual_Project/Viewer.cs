@@ -47,7 +47,7 @@ namespace Individual_Project
                             EnterChat();
                             break;
                         case 5:
-                            ShowUsersMessages(null);
+                            ShowUserAllMessages(null);
                             break;
                         case 6:
                             Console.WriteLine();
@@ -67,14 +67,15 @@ namespace Individual_Project
         /// Shows the incoming and outgoing messages of a user
         /// </summary>
         /// <param name="ulogin">If param=null then function asks for username</param>
-        protected void ShowUsersMessages(string ulogin)
+        protected void ShowUserAllMessages(string ulogin)
         {
             string login;
+            DbContext db = new DbContext();
             if (ulogin==null)
             {
                 Console.WriteLine("Insert Username");
                 login = Console.ReadLine();
-                if (!CheckIfExists(login))
+                if (!db.CheckIfExists(login))
                 {
                     return;
                 }
@@ -83,31 +84,7 @@ namespace Individual_Project
             {
                 login = ulogin;
             }
-            
-           
-            SqlConnection dbcon = new SqlConnection(connectionstring);
-            using (dbcon)
-            { 
-                dbcon.Open();
-                var cmd = new SqlCommand("select * from Messages where ReceiverID = @user or SenderID = @user", dbcon);
-                cmd.Parameters.AddWithValue("@user", GetUserID(login));
-                using (var reader = cmd.ExecuteReader())
-                {
-                    Console.WriteLine();
-                    while (reader.Read())
-                    {
-                        string[] data = new string[5];
-                        data[0] = reader[0].ToString();
-                        data[1] = reader[1].ToString();
-                        data[2] = reader[2].ToString();
-                        data[3] = reader[3].ToString();
-                        data[4] = reader[4].ToString();
-
-                        Console.WriteLine($"ID: {data[0]} Message: {data[1]}, Date: {data[2]}, Sender: {GetLogin(int.Parse(data[3]))},SenderID: {data[3]},Receiver: {GetLogin(int.Parse(data[4]))}");
-                    }
-                    Console.WriteLine();
-                }
-            }
+            db.ShowAll(login);
         }
     }
 }
